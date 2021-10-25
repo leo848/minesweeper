@@ -1,6 +1,7 @@
 package io.github.leo848;
 
-import java.io.Serializable;
+import java.awt.*;
+import java.io.*;
 
 @SuppressWarnings({"unused", "StandardVariableNames", "UnusedReturnValue"})
 public class Vector implements Serializable {
@@ -25,6 +26,10 @@ public class Vector implements Serializable {
 		this.x = x;
 		this.y = y;
 		this.z = 0;
+	}
+	
+	public Vector(Point location) {
+		this(location.x, location.y);
 	}
 	
 	static public Vector add(Vector v1, Vector v2) {
@@ -222,6 +227,12 @@ public class Vector implements Serializable {
 	@Deprecated
 	public Vector get() {
 		return copy();
+	}
+	
+	public void ensureNotNaN() {
+		if (Float.isNaN(x)) x = 0f;
+		if (Float.isNaN(y)) y = 0f;
+		if (Float.isNaN(z)) z = 0f;
 	}
 	
 	public Vector copy() {

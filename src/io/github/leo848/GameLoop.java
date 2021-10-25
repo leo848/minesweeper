@@ -46,7 +46,7 @@ public class GameLoop implements Runnable {
 	
 	private void init() {
 		System.out.println("init");
-		frame = new MinesweeperFrame(this);
+		frame = new MinesweeperFrame();
 		
 	}
 	
