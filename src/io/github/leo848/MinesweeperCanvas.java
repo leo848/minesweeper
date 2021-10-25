@@ -25,7 +25,7 @@ public class MinesweeperCanvas extends JPanel {
 		scale.set(size.x / 10, size.y / 10);
 		
 		fillGrid(10, 10);
-		distributeMines(10);
+		distributeMines(15);
 		calculateNeighbors();
 	}
 	
@@ -34,7 +34,7 @@ public class MinesweeperCanvas extends JPanel {
 			for (int y = 0; y < grid.get(x).size(); y++) {
 				if (grid.get(x).get(y) == -1) continue;
 				
-				int i = 0; // neighbor count
+				int i = 0; // neighbor count, this has to be done better in some random way
 				i += safeArrayListCheck(x - 1, y - 1, -1);
 				i += safeArrayListCheck(x, y - 1, -1);
 				i += safeArrayListCheck(x + 1, y - 1, -1);
