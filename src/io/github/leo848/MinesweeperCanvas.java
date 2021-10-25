@@ -16,7 +16,7 @@ public class MinesweeperCanvas extends JPanel {
 	Vector size = new Vector(500, 500);
 	List<List<Integer>> grid;
 	private GameLoop gameLoop;
-	private Random random;
+	private Random random = new Random();
 	
 	public MinesweeperCanvas(GameLoop gameLoop) {
 		this.gameLoop = gameLoop;
@@ -25,13 +25,47 @@ public class MinesweeperCanvas extends JPanel {
 		scale.set(size.x / 10, size.y / 10);
 		
 		fillGrid(10, 10);
+		distributeMines(10);
+		calculateNeighbors();
+	}
+	
+	private void calculateNeighbors() {
+		for (int x = 0; x < grid.size(); x++) {
+			for (int y = 0; y < grid.get(x).size(); y++) {
+				if (grid.get(x).get(y) == -1) continue;
+				
+				int i = 0; // neighbor count
+				i += safeArrayListCheck(x - 1, y - 1, -1);
+				i += safeArrayListCheck(x, y - 1, -1);
+				i += safeArrayListCheck(x + 1, y - 1, -1);
+				
+				i += safeArrayListCheck(x - 1, y, -1);
+				i += safeArrayListCheck(x + 1, y, -1);
+				
+				i += safeArrayListCheck(x - 1, y + 1, -1);
+				i += safeArrayListCheck(x, y + 1, -1);
+				i += safeArrayListCheck(x + 1, y + 1, -1);
+				
+				grid.get(x).set(y, i);
+			}
+		}
+	}
+	
+	private int safeArrayListCheck(int x, int y, Integer check) {
+		int flag = 0;
+		try {
+			return grid.get(x).get(y).equals(check) ? 1 : 0;
+		} catch (IndexOutOfBoundsException e) {
+			return 0;
+		}
 	}
 	
 	@Override
 	public void paint(Graphics graphics) {
 		Graphics2D g2D = (Graphics2D) graphics;
 		
-		g2D.setColor(new Color(0x0));
+		g2D.setColor(new Color(0xffffff));
+		g2D.setFont(new Font("Arial", Font.PLAIN, 50));
 		g2D.fillRect(0, 0, 500, 500);
 		
 		g2D.setColor(new Color(0xffffff));
@@ -41,6 +75,11 @@ public class MinesweeperCanvas extends JPanel {
 				if (number == -1) {
 					g2D.setColor(new Color(0xff0000));
 					g2D.fillRect((int) (x * scale.x + 5), (int) (y * scale.y + 5), (int) (scale.x - 10), (int) (scale.y - 10));
+				} else {
+					g2D.setColor(new Color(0xffffff));
+					g2D.fillRect((int) (x * scale.x), (int) (y * scale.y), (int) scale.x, (int) scale.y);
+					g2D.setColor(new Color(0x0));
+					g2D.drawString(Integer.toString(number), x * scale.x, (y+1) * scale.y);
 				}
 			}
 		}
@@ -53,7 +92,9 @@ public class MinesweeperCanvas extends JPanel {
 				.collect(Collectors.toList());
 		
 		for (int i = 0; i < amount; i++) {
-			int randomNumber = possibilities.get;
+			int randomNumber = possibilities.get(random.nextInt(possibilities.size()));
+			grid.get(randomNumber / grid.size()).set(randomNumber % grid.size(), -1);
+			possibilities.remove((Integer) randomNumber);
 		}
 	}
 	
