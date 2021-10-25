@@ -5,8 +5,8 @@ import javax.swing.*;
 public class MinesweeperFrame extends JFrame {
 	MinesweeperCanvas canvas;
 	
-	public MinesweeperFrame() {
-		canvas = new MinesweeperCanvas();
+	public MinesweeperFrame(GameLoop gameLoop) {
+		canvas = new MinesweeperCanvas(gameLoop);
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		

@@ -15,41 +15,22 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 	final Vector scale = new Vector();
 	final Vector mouse = new Vector();
 	Vector size = new Vector(500, 500);
-	List<List<Integer>> grid;
-	List<List<Boolean>> visible;
+	private final GameLoop gameLoop;
+	List<List<Tile>> grid;
+	private Graphics2D g2D;
 	
-	public MinesweeperCanvas() {
+	public MinesweeperCanvas(GameLoop gameLoop) {
+		this.gameLoop = gameLoop;
 		setPreferredSize(new Dimension((int) size.x, (int) size.y));
 		
-		int xTiles = 20;
-		int yTiles = 20;
+		int xTiles = 16;
+		int yTiles = 16;
 		
 		fillGrids(xTiles, yTiles);
 		scale.set(size.x / yTiles, size.y / yTiles);
 		
-		distributeMines(xTiles * yTiles / 20);
-		calculateNeighbors();
-	}
-	
-	private void calculateNeighbors() {
-		for (int x = 0; x < grid.size(); x++) {
-			for (int y = 0; y < grid.get(x).size(); y++) {
-				if (grid.get(x).get(y) == -1) continue;
-				
-				grid.get(x).set(y, getNeighbors(new Vector(x, y)).size());
-			}
-		}
-	}
-	
-	public List<Vector> getNeighbors(Vector tile) {
-		List<Vector> neighbors = new ArrayList<>();
-		for (int i = -1; i <= 1; i++) {
-			for (int j = -1; j <= 1; j++) {
-				
-				neighbors.add(new Vector(i, j));
-			}
-		}
-		return neighbors;
+		distributeMines(40);
+		grid.forEach(tiles -> tiles.forEach(Tile::getNearbyMines));
 	}
 	
 	public void distributeMines(int amount) {
@@ -59,45 +40,43 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		
 		for (int i = 0; i < amount; i++) {
 			int randomNumber = possibilities.get(random.nextInt(possibilities.size()));
-			grid.get(randomNumber / grid.size()).set(randomNumber % grid.size(), -1);
+			grid.get(randomNumber / grid.size()).get(randomNumber % grid.size()).isMine = true;
 			possibilities.remove((Integer) randomNumber);
 		}
 	}
 	
 	public void fillGrids(int width, int height) {
 		grid = new ArrayList<>(width);
-		visible = new ArrayList<>(width);
 		
 		for (int x = 0; x < width; x++) {
 			grid.add(new ArrayList<>(height));
-			visible.add(new ArrayList<>(height));
 			for (int y = 0; y < height; y++) {
-				grid.get(x).add(0);
-				visible.get(x).add(false);
+				grid.get(x).add(new Tile(x, y, grid));
 			}
-		}
-	}
-	
-	private int safeArrayListAccess(int x, int y) {
-		try {
-			return grid.get(x).get(y);
-		} catch (IndexOutOfBoundsException e) {
-			return -2;
 		}
 	}
 	
 	@Override
 	public void mouseReleased(MouseEvent e) {
 		Vector index = determineMouseGrid();
-		if (grid.get((int) index.x).get((int) index.y) == -1) uncoverAllTiles();
-		visible.get((int) index.x).set((int) index.y, true);
-	}
-	
-	/**
-	 * Resets the visible ArrayList<List<Boolean>>.
-	 */
-	private void uncoverAllTiles() {
-		visible.forEach(booleans -> IntStream.range(0, booleans.size()).forEach(j -> booleans.set(j, true)));
+		Tile tile = grid.get((int) index.x).get((int) index.y);
+		
+		if (tile.isVisible) return;
+		
+		switch (e.getButton()) {
+			case 1 -> {
+				if (tile.isMine) gameOver(g2D);
+				else if (tile.nearbyMines != 0) uncoverTile(tile);
+				else tile.recursivelyUncoverNeighboringTiles();
+			}
+			case 2 -> {
+			}
+			case 3 -> {
+				if (tile.isMine) uncoverTile(tile);
+				else gameOver(g2D);
+			}
+			default -> throw new IllegalStateException("Unexpected value: " + e.getButton());
+		}
 	}
 	
 	private Vector determineMouseGrid() {
@@ -110,9 +89,23 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		return vector;
 	}
 	
+	public void gameOver(Graphics2D g2D) {
+		uncoverAllTiles();
+		g2D.setColor(new Color(0xfffffff));
+		g2D.drawString("Game over!", 20, 20);
+		super.paint(g2D);
+		paint(g2D);
+		gameLoop.freeze();
+		System.out.println("frozen");
+	}
+	
+	private void uncoverAllTiles() {
+		grid.forEach(tiles -> tiles.forEach(Tile::makeVisible));
+	}
+	
 	@Override
 	public void paint(Graphics graphics) {
-		Graphics2D g2D = (Graphics2D) graphics;
+		g2D = (Graphics2D) graphics;
 		mouse.set(new Vector(getPointerInfo().getLocation()).sub(new Vector(getLocationOnScreen())));
 		
 		g2D.setColor(new Color(0x0));
@@ -127,31 +120,33 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 	private void drawGrid(Graphics2D g2D) {
 		for (int x = 0; x < grid.size(); x++) {
 			for (int y = 0; y < grid.get(x).size(); y++) {
-				if (!visible.get(x).get(y)) {
+				if (!grid.get(x).get(y).isVisible) {
 					g2D.setColor(new Color(0b1010_1011_1100_1101_1110_1111));
 					scaledRect(g2D, x, y, 1);
 					continue;
 				}
 				
-				int number = grid.get(x).get(y);
-				switch (number) {
-					case 0 -> {
-						g2D.setColor(new Color(0x232323));
-						scaledRect(g2D, x, y, .9);
-					}
-					case -1 -> {
-						g2D.setColor(new Color(0xff0000));
-						scaledRect(g2D, x, y, .7);
-					}
-					default -> {
-						g2D.setColor(new Color(0x232323));
-						scaledRect(g2D, x, y, .9);
-						g2D.setColor(new Color(0x0));
-						drawStringInGrid(g2D, Integer.toString(number), x, y);
-					}
+				Tile tile = grid.get(x).get(y);
+				
+				int mines = tile.nearbyMines;
+				if (tile.isMine) {
+					g2D.setColor(new Color(0xff0000));
+					scaledRect(g2D, x, y, .7);
+				} else if (mines == 0) {
+					g2D.setColor(new Color(0x232323));
+					scaledRect(g2D, x, y, .9);
+				} else {
+					g2D.setColor(new Color(0x232323));
+					scaledRect(g2D, x, y, .9);
+					g2D.setColor(new Color(0x0));
+					drawStringInGrid(g2D, Integer.toString(mines), x, y);
 				}
 			}
 		}
+	}
+	
+	private void uncoverTile(Tile tile) {
+		tile.makeVisible();
 	}
 	
 	private void scaledRect(Graphics2D g2D, int x, int y, double scaleFactor) {

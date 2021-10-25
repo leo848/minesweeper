@@ -12,6 +12,7 @@ public class GameLoop implements Runnable {
 	int optimalFPS = 60;
 	int sleepMillis = 1000 / optimalFPS;
 	private Boolean running = false;
+	private boolean frozen;
 	
 	public GameLoop() {
 	
@@ -44,10 +45,8 @@ public class GameLoop implements Runnable {
 		stop();
 	}
 	
-	private void init() {
-		System.out.println("init");
-		frame = new MinesweeperFrame();
-		
+	public void freeze() {
+		frozen = true;
 	}
 	
 	private void update() {
@@ -55,8 +54,17 @@ public class GameLoop implements Runnable {
 		
 	}
 	
+	public void unfreeze() {
+		frozen = false;
+	}
+	
+	private void init() {
+		System.out.println("init");
+		frame = new MinesweeperFrame(this);
+	}
+	
 	private void render() {
-		frame.repaintCanvas();
+		if (!frozen) frame.repaintCanvas();
 	}
 	
 	public synchronized void stop() {
