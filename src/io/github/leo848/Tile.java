@@ -94,6 +94,10 @@ public class Tile {
 	private void showScaledRect(Graphics2D g2D, int x, int y, int color) {
 		g2D.setColor(new Color(color));
 		g2D.fillRect(x * SCALE_WIDTH, y * SCALE_HEIGHT, SCALE_WIDTH, SCALE_HEIGHT);
+		
+		g2D.setColor(new Color(0x0));
+		g2D.drawLine(x * SCALE_WIDTH, 0, x * SCALE_WIDTH, WINDOW_HEIGHT);
+		g2D.drawLine(0, y * SCALE_HEIGHT, WINDOW_WIDTH, y * SCALE_HEIGHT);
 	}
 	
 	private void drawTextHere(Graphics2D g2D, String text) {
