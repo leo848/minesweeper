@@ -11,10 +11,10 @@ import static io.github.leo848.Constants.*;
 import static java.awt.MouseInfo.*;
 
 public class MinesweeperCanvas extends JPanel implements MouseClickListener {
-	final static private Random random = new Random();
+	private static final Random random = new Random();
 	final Vector mouse = new Vector();
 	
-	private final GameLoop gameLoop;
+	private final transient GameLoop gameLoop;
 	
 	List<List<Tile>> grid;
 	private Graphics2D g2D;
@@ -23,8 +23,6 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 	public MinesweeperCanvas(GameLoop gameLoop) {
 		this.gameLoop = gameLoop;
 		setPreferredSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT));
-		
-		int yTiles = 16;
 		
 		fillGrids();
 		
@@ -68,16 +66,18 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		switch (e.getButton()) {
 			case 1 -> {
 				if (tile.isMine) gameOver();
-				else if (tile.nearbyMines != 0) uncoverTile(tile);
-				else tile.recursivelyUncoverNeighboringTiles();
-			}
-			case 2 -> {
+				else {
+					tile.makeVisible();
+					tile.recursivelyUncoverNeighboringTiles();
+				}
 			}
 			case 3 -> {
-				if (tile.isMine) uncoverTile(tile);
+				if (tile.isMine) tile.makeVisible();
 				else gameOver();
 			}
-			default -> throw new IllegalStateException("Unexpected value: " + e.getButton());
+			default -> {
+				// other buttons
+			}
 		}
 	}
 	
@@ -90,10 +90,6 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 	
 	private void uncoverAllTiles() {
 		grid.forEach(tiles -> tiles.forEach(Tile::makeVisible));
-	}
-	
-	private void uncoverTile(Tile tile) {
-		tile.makeVisible();
 	}
 	
 	private Vector determineMouseGrid() {
@@ -116,8 +112,6 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		if (gameOver) drawGameOver();
 		
 		drawGrid(g2D);
-		
-		// determineMouseGrid();
 	}
 	
 	private void drawGameOver() {

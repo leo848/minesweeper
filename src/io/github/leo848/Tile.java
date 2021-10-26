@@ -3,7 +3,6 @@ package io.github.leo848;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
-import java.util.stream.*;
 
 import static io.github.leo848.Constants.*;
 
@@ -44,21 +43,16 @@ public class Tile {
 		              .forEach(Tile::recursivelyUncoverNeighboringTiles);
 	}
 	
-	public void show(Graphics2D g2D) {
-		if (!isVisible) {
-			showScaledRect(g2D, x, y, 0xaaaaaa);
-			return;
+	public List<Tile> getNeighbors() {
+		List<Tile> neighbors = new ArrayList<>();
+		for (int tempX = -1; tempX <= 1; tempX++) {
+			for (int tempY = -1; tempY <= 1; tempY++) {
+				neighbors.add(safeArrayListAccess(x + tempX, y + tempY));
+			}
 		}
-		
-		if (isMine) {
-			showScaledRect(g2D, x, y, 0xff0000);
-		} else if (nearbyMines == 0) {
-			showScaledRect(g2D, x, y, 0xcacaca);
-		} else {
-			showScaledRect(g2D, x, y, 0xacacac);
-			g2D.setColor(new Color(0x0));
-			drawTextHere(g2D, Integer.toString(getNearbyMines()));
-		}
+		return neighbors.stream()
+		                .filter(Objects::nonNull)
+		                .toList();
 	}
 	
 	public int getNearbyMines() {
@@ -71,16 +65,21 @@ public class Tile {
 		return nearbyMines;
 	}
 	
-	public List<Tile> getNeighbors() {
-		List<Tile> neighbors = new ArrayList<>();
-		for (int tempX = -1; tempX <= 1; tempX++) {
-			for (int tempY = -1; tempY <= 1; tempY++) {
-				neighbors.add(safeArrayListAccess(x + tempX, y + tempY));
-			}
+	public void show(Graphics2D g2D) {
+		if (!isVisible) {
+			showScaledRect(g2D, x, y, 0xcacaca);
+			return;
 		}
-		return neighbors.stream()
-		                .filter(Objects::nonNull)
-		                .collect(Collectors.toList());
+		
+		if (isMine) {
+			showScaledRect(g2D, x, y, 0xff0000);
+		} else if (nearbyMines == 0) {
+			showScaledRect(g2D, x, y, 0xaaaaaa);
+		} else {
+			showScaledRect(g2D, x, y, 0xacacac);
+			g2D.setColor(new Color(0x0));
+			drawTextHere(g2D, Integer.toString(getNearbyMines()));
+		}
 	}
 	
 	private Tile safeArrayListAccess(int x, int y) {
