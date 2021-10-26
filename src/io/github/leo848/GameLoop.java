@@ -46,16 +46,12 @@ public class GameLoop implements Runnable {
 	}
 	
 	public void freeze() {
-		frozen = true;
+		running = false;
 	}
 	
 	private void update() {
 		//System.out.println("update");
 		
-	}
-	
-	public void unfreeze() {
-		frozen = false;
 	}
 	
 	private void init() {
@@ -64,7 +60,7 @@ public class GameLoop implements Runnable {
 	}
 	
 	private void render() {
-		if (!frozen) frame.repaintCanvas();
+		frame.repaintCanvas();
 	}
 	
 	public synchronized void stop() {
