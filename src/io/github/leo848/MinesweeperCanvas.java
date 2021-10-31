@@ -3,9 +3,12 @@ package io.github.leo848;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.*;
-import java.util.stream.*;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.github.leo848.Constants.*;
 import static java.awt.MouseInfo.*;
@@ -57,9 +60,7 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 	
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		Vector index = determineMouseGrid();
-		Tile tile = grid.get((int) index.x)
-		                .get((int) index.y);
+		Tile tile = determineMouseTile();
 		
 		if (tile.isVisible) return;
 		
@@ -88,18 +89,20 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		gameOver = true;
 	}
 	
-	private void uncoverAllTiles() {
-		grid.forEach(tiles -> tiles.forEach(Tile::makeVisible));
-	}
-	
-	private Vector determineMouseGrid() {
+	/**
+	 * @return nearest tile in grid based on current mouse position
+	 */
+	private Tile determineMouseTile() {
 		Vector vector = mouse.copy();
 		
-		vector.x -= vector.x % SCALE_WIDTH;
-		vector.y -= vector.y % SCALE_HEIGHT;
+		int x = (int) ((vector.x - (vector.x % SCALE_WIDTH)) / SCALE_WIDTH);
+		int y = (int) ((vector.y - (vector.y % SCALE_HEIGHT)) / SCALE_HEIGHT);
 		
-		vector.div(SCALE_VECTOR);
-		return vector;
+		x = Math.min(Math.max(x, 0), GRID_WIDTH - 1);
+		y = Math.min(Math.max(y, 0), GRID_HEIGHT - 1);
+		
+		return grid.get(x)
+		           .get(y);
 	}
 	
 	@Override
@@ -112,6 +115,14 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		if (gameOver) drawGameOver();
 		
 		drawGrid(g2D);
+		
+		determineMouseTile().showHighlighted(g2D);
+	}
+	
+	private void drawGrid(Graphics2D g2D) {
+		grid.stream()
+		    .flatMap(Collection::stream)
+		    .forEachOrdered(tile -> tile.show(g2D));
 	}
 	
 	private void drawGameOver() {
@@ -124,17 +135,15 @@ public class MinesweeperCanvas extends JPanel implements MouseClickListener {
 		g2D.drawString("Game over!", 20, 20);
 	}
 	
-	private void drawGrid(Graphics2D g2D) {
-		for (List<Tile> tiles: grid) {
-			for (Tile tile: tiles) {
-				tile.show(g2D);
-			}
-		}
-	}
-	
 	private void initGraphics() {
 		g2D.setFont(DEFAULT_FONT);
-		g2D.setColor(new Color(0xffffff));
-		g2D.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+		g2D.setColor(new Color(0xcccccc));
+		g2D.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+	}
+	
+	private void uncoverAllTiles() {
+		grid.stream()
+		    .flatMap(Collection::stream)
+		    .forEach(Tile::makeVisible);
 	}
 }
