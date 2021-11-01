@@ -9,8 +9,8 @@ import java.util.Objects;
 import static io.github.leo848.Constants.*;
 
 public class Tile {
-	private final List<List<Tile>> grid;
 	final int x, y;
+	private final List<List<Tile>> grid;
 	Integer nearbyMines;
 	private boolean isMine = false;
 	private boolean isVisible = false;
@@ -47,16 +47,38 @@ public class Tile {
 		return !tile.isMine();
 	}
 	
-	public boolean isMine() {
-		return isMine;
-	}
-	
-	public void setMine(boolean mine) {
-		isMine = mine;
-	}
-	
 	private static boolean notVisible(Tile tile) {
 		return !tile.isVisible();
+	}
+	
+	public void show(Graphics2D g2D) {
+		if (!isVisible()) {
+			showScaledRect(g2D, x, y, new Color(0xdadbdc));
+			return;
+		}
+		
+		int mineDisplay;
+		if (UPDATE_NEARBY_MINES) {
+			mineDisplay = (int) (getNearbyMines() - getNonDefusedMines());
+		} else {
+			mineDisplay = getNearbyMines();
+		}
+		
+		if (isMine()) {
+			showScaledRect(g2D, x, y, new Color(0xff0000));
+		} else if (mineDisplay == 0) {
+			showScaledRect(g2D, x, y, new Color(0xaaaaaa));
+		} else {
+			showScaledRect(g2D, x, y, new Color(0xafafaf));
+			g2D.setColor(new Color(0x0));
+			drawTextHere(g2D, Integer.toString(mineDisplay));
+			
+			if (allMinesDefused()) showScaledRect(g2D, x, y, new Color(0x1600ff00, true));
+		}
+	}
+	
+	public boolean allMinesDefused() {
+		return getNonDefusedMines() == getNearbyMines();
 	}
 	
 	@Override
@@ -77,20 +99,22 @@ public class Tile {
 		return isVisible() == tile.isVisible();
 	}
 	
-	@Override
-	public String toString() {
-		return "Tile{" +
-		       "isMine=" +
-		       isMine() +
-		       ", x=" +
-		       x +
-		       ", y=" +
-		       y +
-		       ", nearbyMines=" +
-		       nearbyMines +
-		       ", isVisible=" +
-		       isVisible() +
-		       '}';
+	public int getNearbyMines() {
+		if (nearbyMines == null) {
+			nearbyMines = getNeighbors().stream()
+			                            .filter(Tile::isMine)
+			                            .toArray().length;
+		}
+		
+		return nearbyMines;
+	}
+	
+	public boolean isMine() {
+		return isMine;
+	}
+	
+	public void setMine(boolean mine) {
+		isMine = mine;
 	}
 	
 	public void makeVisible() {
@@ -108,44 +132,14 @@ public class Tile {
 		              .forEach(Tile::recursivelyUncoverNeighboringTiles);
 	}
 	
-	public void show(Graphics2D g2D) {
-		if (!isVisible()) {
-			showScaledRect(g2D, x, y, new Color(0xdadbdc));
-			return;
-		}
+	private void drawTextHere(Graphics2D g2D, String text) {
+		FontMetrics metrics = g2D.getFontMetrics(DEFAULT_FONT);
 		
-		if (isMine()) {
-			showScaledRect(g2D, x, y, new Color(0xff0000));
-		} else if (nearbyMines == 0) {
-			showScaledRect(g2D, x, y, new Color(0xaaaaaa));
-		} else {
-			showScaledRect(g2D, x, y, new Color(0xafafaf));
-			g2D.setColor(new Color(0x0));
-			drawTextHere(g2D, Integer.toString(getNearbyMines()));
-			
-			if (allMinesDefused()) showScaledRect(g2D, x, y, new Color(0x1600ff00, true));
-		}
-	}
-	
-	public boolean allMinesDefused() {
-		return getNonDefusedMines() == getNearbyMines();
-	}
-	
-	private long getNonDefusedMines() {
-		return getNeighbors().stream()
-		                     .filter(Tile::isMine)
-		                     .filter(Tile::isVisible)
-		                     .count();
-	}
-	
-	public int getNearbyMines() {
-		if (nearbyMines == null) {
-			nearbyMines = getNeighbors().stream()
-			                            .filter(Tile::isMine)
-			                            .toArray().length;
-		}
-		
-		return nearbyMines;
+		g2D.setColor(Color.BLACK);
+		g2D.drawString(text,
+		               (int) (x * SCALE_WIDTH) + (int) (SCALE_WIDTH / 2) - (metrics.stringWidth(text) / 2),
+		               (int) (y * SCALE_HEIGHT) + (int) (SCALE_HEIGHT / 2) -
+		               ((metrics.getHeight() / 2) - metrics.getAscent()));
 	}
 	
 	public void showHighlighted(Graphics2D g2D) {
@@ -183,17 +177,27 @@ public class Tile {
 		                .toList();
 	}
 	
-	private void drawTextHere(Graphics2D g2D, String text) {
-		FontMetrics metrics = g2D.getFontMetrics(DEFAULT_FONT);
-		
-		int posX = (int) (x * SCALE_WIDTH) + (int) (SCALE_WIDTH / 2);
-		int posY = (int) (y * SCALE_HEIGHT) + (int) (SCALE_HEIGHT / 2);
-		
-		posX -= metrics.stringWidth(text) / 2;
-		posY -= (metrics.getHeight() / 2 - metrics.getAscent());
-		
-		g2D.setColor(Color.BLACK);
-		g2D.drawString(text, posX, posY);
+	private long getNonDefusedMines() {
+		return getNeighbors().stream()
+		                     .filter(Tile::isMine)
+		                     .filter(Tile::isVisible)
+		                     .count();
+	}
+	
+	@Override
+	public String toString() {
+		return "Tile{" +
+		       "isMine=" +
+		       isMine() +
+		       ", x=" +
+		       x +
+		       ", y=" +
+		       y +
+		       ", nearbyMines=" +
+		       nearbyMines +
+		       ", isVisible=" +
+		       isVisible() +
+		       '}';
 	}
 	
 	private Tile safeArrayListAccess(int x, int y) {
