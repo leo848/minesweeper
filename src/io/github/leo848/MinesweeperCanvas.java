@@ -41,7 +41,8 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		for (int i = 0; i < NUMBER_OF_MINES; i++) {
 			int randomNumber = possibilities.get(random.nextInt(possibilities.size()));
 			grid.get(randomNumber / GRID_WIDTH)
-			    .get(randomNumber % GRID_HEIGHT).isMine = true;
+			    .get(randomNumber % GRID_HEIGHT)
+			    .setMine(true);
 			possibilities.remove((Integer) randomNumber);
 		}
 	}
@@ -59,21 +60,43 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 	}
 	
 	@Override
-	public void mouseReleased(MouseEvent e) {
+	public void paint(Graphics graphics) {
+		g2D = (Graphics2D) graphics;
+		initGraphics();
+		
+		mouse.set(new Vector(getPointerInfo().getLocation()).sub(new Vector(getLocationOnScreen())));
+		
+		if (gameOver) drawGameOver();
+		
+		drawGrid(g2D);
+		
+		determineMouseTile().showHighlighted(g2D);
+	}
+	
+	private void drawGameOver() {
+		drawGrid(g2D);
+		drawGameOverString(g2D);
+	}
+	
+	private void drawGameOverString(Graphics2D g2D) {
+		g2D.setColor(new Color(0x0));
+		g2D.drawString("Game over!", 20, 550);
+	}	@Override
+	public void mousePressed(MouseEvent e) {
 		Tile tile = determineMouseTile();
 		
-		if (tile.isVisible) return;
+		if (tile.isVisible()) return;
 		
 		switch (e.getButton()) {
 			case 1 -> {
-				if (tile.isMine) gameOver();
+				if (tile.isMine()) gameOver();
 				else {
 					tile.makeVisible();
 					tile.recursivelyUncoverNeighboringTiles();
 				}
 			}
 			case 3 -> {
-				if (tile.isMine) tile.makeVisible();
+				if (tile.isMine()) tile.makeVisible();
 				else gameOver();
 			}
 			default -> {
@@ -82,12 +105,31 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		}
 	}
 	
+	private void drawGrid(Graphics2D g2D) {
+		grid.stream()
+		    .flatMap(Collection::stream)
+		    .forEachOrdered(tile -> tile.show(g2D));
+	}
+	
+	private void initGraphics() {
+		g2D.setFont(DEFAULT_FONT);
+		g2D.setColor(new Color(0xcccccc));
+		g2D.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+	}	@Override
+	public void mouseDragged(MouseEvent e) {
+		mousePressed(e);
+	}
+	
+
+	
 	public void gameOver() {
 		uncoverAllTiles();
 		
 		gameLoop.frame.repaint();
 		gameOver = true;
 	}
+	
+
 	
 	/**
 	 * @return nearest tile in grid based on current mouse position
@@ -103,42 +145,6 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		
 		return grid.get(x)
 		           .get(y);
-	}
-	
-	@Override
-	public void paint(Graphics graphics) {
-		g2D = (Graphics2D) graphics;
-		initGraphics();
-		
-		mouse.set(new Vector(getPointerInfo().getLocation()).sub(new Vector(getLocationOnScreen())));
-		
-		if (gameOver) drawGameOver();
-		
-		drawGrid(g2D);
-		
-		determineMouseTile().showHighlighted(g2D);
-	}
-	
-	private void drawGrid(Graphics2D g2D) {
-		grid.stream()
-		    .flatMap(Collection::stream)
-		    .forEachOrdered(tile -> tile.show(g2D));
-	}
-	
-	private void drawGameOver() {
-		drawGrid(g2D);
-		drawGameOverString(g2D);
-	}
-	
-	private void drawGameOverString(Graphics2D g2D) {
-		g2D.setColor(new Color(0x0));
-		g2D.drawString("Game over!", 20, 20);
-	}
-	
-	private void initGraphics() {
-		g2D.setFont(DEFAULT_FONT);
-		g2D.setColor(new Color(0xcccccc));
-		g2D.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 	}
 	
 	private void uncoverAllTiles() {

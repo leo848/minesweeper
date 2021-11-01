@@ -2,7 +2,7 @@ package io.github.leo848;
 
 import java.awt.event.*;
 
-public interface OptionalMouseListener extends MouseListener {
+public interface OptionalMouseListener extends MouseListener, MouseMotionListener {
 	@Override
 	default void mouseClicked(MouseEvent e) {
 	}
@@ -12,7 +12,7 @@ public interface OptionalMouseListener extends MouseListener {
 	}
 	
 	@Override
-	default void mouseReleased(MouseEvent e) {
+	default void mouseDragged(MouseEvent e) {
 	
 	}
 	
@@ -22,5 +22,15 @@ public interface OptionalMouseListener extends MouseListener {
 	
 	@Override
 	default void mouseExited(MouseEvent e) {
+	}
+	
+	@Override
+	default void mouseMoved(MouseEvent e) {
+	
+	}
+	
+	@Override
+	default void mouseReleased(MouseEvent e) {
+	
 	}
 }

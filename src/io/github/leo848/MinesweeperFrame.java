@@ -12,6 +12,7 @@ public class MinesweeperFrame extends JFrame {
 		
 		add(canvas);
 		addMouseListener(canvas);
+		addMouseMotionListener(canvas);
 		
 		pack();
 		setLocationRelativeTo(null);

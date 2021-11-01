@@ -10,11 +10,10 @@ import static io.github.leo848.Constants.*;
 
 public class Tile {
 	private final List<List<Tile>> grid;
-	public boolean isMine = false;
-	int x;
-	int y;
+	final int x, y;
 	Integer nearbyMines;
-	boolean isVisible = false;
+	private boolean isMine = false;
+	private boolean isVisible = false;
 	
 	public Tile(int x, int y, List<List<Tile>> grid) {
 		this.x = x;
@@ -26,29 +25,45 @@ public class Tile {
 		return grid.stream()
 		           .flatMap(Collection::stream)
 		           .filter(Objects::nonNull)
-		           .allMatch(tile -> tile.isVisible);
+		           .allMatch(Tile::isVisible);
+	}
+	
+	public boolean isVisible() {
+		return isVisible;
+	}
+	
+	public void setVisible(boolean visible) {
+		isVisible = visible;
 	}
 	
 	public static boolean noneVisible(List<List<Tile>> grid) {
 		return grid.stream()
 		           .flatMap(Collection::stream)
 		           .filter(Objects::nonNull)
-		           .noneMatch(tile -> tile.isVisible);
+		           .noneMatch(Tile::isVisible);
 	}
 	
 	private static boolean notAMine(Tile tile) {
-		return !tile.isMine;
+		return !tile.isMine();
+	}
+	
+	public boolean isMine() {
+		return isMine;
+	}
+	
+	public void setMine(boolean mine) {
+		isMine = mine;
 	}
 	
 	private static boolean notVisible(Tile tile) {
-		return !tile.isVisible;
+		return !tile.isVisible();
 	}
 	
 	@Override
 	public int hashCode() {
 		int result = x;
 		result = 31 * result + y;
-		result = 31 * result + (isVisible ? 1 : 0);
+		result = 31 * result + (isVisible() ? 1 : 0);
 		return result;
 	}
 	
@@ -59,14 +74,14 @@ public class Tile {
 		
 		if (x != tile.x) return false;
 		if (y != tile.y) return false;
-		return isVisible == tile.isVisible;
+		return isVisible() == tile.isVisible();
 	}
 	
 	@Override
 	public String toString() {
 		return "Tile{" +
 		       "isMine=" +
-		       isMine +
+		       isMine() +
 		       ", x=" +
 		       x +
 		       ", y=" +
@@ -74,12 +89,12 @@ public class Tile {
 		       ", nearbyMines=" +
 		       nearbyMines +
 		       ", isVisible=" +
-		       isVisible +
+		       isVisible() +
 		       '}';
 	}
 	
 	public void makeVisible() {
-		isVisible = true;
+		setVisible(true);
 	}
 	
 	public void recursivelyUncoverNeighboringTiles() {
@@ -94,12 +109,12 @@ public class Tile {
 	}
 	
 	public void show(Graphics2D g2D) {
-		if (!isVisible) {
+		if (!isVisible()) {
 			showScaledRect(g2D, x, y, new Color(0xdadbdc));
 			return;
 		}
 		
-		if (isMine) {
+		if (isMine()) {
 			showScaledRect(g2D, x, y, new Color(0xff0000));
 		} else if (nearbyMines == 0) {
 			showScaledRect(g2D, x, y, new Color(0xaaaaaa));
@@ -107,13 +122,26 @@ public class Tile {
 			showScaledRect(g2D, x, y, new Color(0xafafaf));
 			g2D.setColor(new Color(0x0));
 			drawTextHere(g2D, Integer.toString(getNearbyMines()));
+			
+			if (allMinesDefused()) showScaledRect(g2D, x, y, new Color(0x1600ff00, true));
 		}
+	}
+	
+	public boolean allMinesDefused() {
+		return getNonDefusedMines() == getNearbyMines();
+	}
+	
+	private long getNonDefusedMines() {
+		return getNeighbors().stream()
+		                     .filter(Tile::isMine)
+		                     .filter(Tile::isVisible)
+		                     .count();
 	}
 	
 	public int getNearbyMines() {
 		if (nearbyMines == null) {
 			nearbyMines = getNeighbors().stream()
-			                            .filter(tile -> tile.isMine)
+			                            .filter(Tile::isMine)
 			                            .toArray().length;
 		}
 		
@@ -132,28 +160,6 @@ public class Tile {
 		             (int) (neighbors.get(0).y * SCALE_WIDTH),
 		             (int) ((neighbors.get(neighbors.size() - 1).x - neighbors.get(0).x + 1) * SCALE_WIDTH),
 		             (int) ((neighbors.get(neighbors.size() - 1).y - neighbors.get(0).y + 1) * SCALE_HEIGHT));
-	}
-	
-	private Tile safeArrayListAccess(int x, int y) {
-		try {
-			return grid.get(x)
-			           .get(y);
-		} catch (IndexOutOfBoundsException e) {
-			return null;
-		}
-	}
-	
-	private void drawTextHere(Graphics2D g2D, String text) {
-		FontMetrics metrics = g2D.getFontMetrics(DEFAULT_FONT);
-		
-		int posX = (int) (x * SCALE_WIDTH) + (int) (SCALE_WIDTH / 2);
-		int posY = (int) (y * SCALE_HEIGHT) + (int) (SCALE_HEIGHT / 2);
-		
-		posX -= metrics.stringWidth(text) / 2;
-		posY -= (metrics.getHeight() / 2 - metrics.getAscent());
-		
-		g2D.setColor(Color.BLACK);
-		g2D.drawString(text, posX, posY);
 	}
 	
 	private void showScaledRect(Graphics2D g2D, int x, int y, Color color) {
@@ -175,5 +181,27 @@ public class Tile {
 		return neighbors.stream()
 		                .filter(Objects::nonNull)
 		                .toList();
+	}
+	
+	private void drawTextHere(Graphics2D g2D, String text) {
+		FontMetrics metrics = g2D.getFontMetrics(DEFAULT_FONT);
+		
+		int posX = (int) (x * SCALE_WIDTH) + (int) (SCALE_WIDTH / 2);
+		int posY = (int) (y * SCALE_HEIGHT) + (int) (SCALE_HEIGHT / 2);
+		
+		posX -= metrics.stringWidth(text) / 2;
+		posY -= (metrics.getHeight() / 2 - metrics.getAscent());
+		
+		g2D.setColor(Color.BLACK);
+		g2D.drawString(text, posX, posY);
+	}
+	
+	private Tile safeArrayListAccess(int x, int y) {
+		try {
+			return grid.get(x)
+			           .get(y);
+		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
 	}
 }
