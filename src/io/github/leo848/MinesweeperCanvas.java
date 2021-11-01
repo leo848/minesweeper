@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 import static io.github.leo848.Constants.*;
 import static java.awt.MouseInfo.*;
 
-public class MinesweeperCanvas extends JPanel implements MouseClickListener {
+public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 	private static final Random random = new Random();
 	final Vector mouse = new Vector();
 	

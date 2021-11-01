@@ -120,16 +120,18 @@ public class Tile {
 		return nearbyMines;
 	}
 	
-	public List<Tile> getNeighbors() {
-		List<Tile> neighbors = new ArrayList<>();
-		for (int tempX = -1; tempX <= 1; tempX++) {
-			for (int tempY = -1; tempY <= 1; tempY++) {
-				neighbors.add(safeArrayListAccess(x + tempX, y + tempY));
-			}
-		}
-		return neighbors.stream()
-		                .filter(Objects::nonNull)
-		                .toList();
+	public void showHighlighted(Graphics2D g2D) {
+		Color highlightColor = new Color(0x24_000000, true);
+		showScaledRect(g2D, x, y, highlightColor);
+		
+		List<Tile> neighbors = getNeighbors();
+		neighbors.forEach(tile -> showScaledRect(g2D, tile.x, tile.y, highlightColor));
+		
+		g2D.setStroke(new BasicStroke(3));
+		g2D.drawRect((int) (neighbors.get(0).x * SCALE_WIDTH),
+		             (int) (neighbors.get(0).y * SCALE_WIDTH),
+		             (int) ((neighbors.get(neighbors.size() - 1).x - neighbors.get(0).x + 1) * SCALE_WIDTH),
+		             (int) ((neighbors.get(neighbors.size() - 1).y - neighbors.get(0).y + 1) * SCALE_HEIGHT));
 	}
 	
 	private Tile safeArrayListAccess(int x, int y) {
@@ -163,17 +165,15 @@ public class Tile {
 		g2D.drawLine(0, (int) (y * SCALE_HEIGHT), GAME_WIDTH, (int) (y * SCALE_HEIGHT));
 	}
 	
-	public void showHighlighted(Graphics2D g2D) {
-		Color highlightColor = new Color(0x32ffffff, true);
-		showScaledRect(g2D, x, y, highlightColor);
-		
-		List<Tile> neighbors = getNeighbors();
-		neighbors.forEach(tile -> showScaledRect(g2D, tile.x, tile.y, highlightColor));
-		
-		g2D.setStroke(new BasicStroke(3));
-		g2D.drawRect((int) (neighbors.get(0).x * SCALE_WIDTH),
-		             (int) (neighbors.get(0).y * SCALE_WIDTH),
-		             (int) ((neighbors.get(neighbors.size() - 1).x - neighbors.get(0).x + 1) * SCALE_WIDTH),
-		             (int) ((neighbors.get(neighbors.size() - 1).y - neighbors.get(0).y + 1) * SCALE_HEIGHT));
+	List<Tile> getNeighbors() {
+		List<Tile> neighbors = new ArrayList<>();
+		for (int tempX = -1; tempX <= 1; tempX++) {
+			for (int tempY = -1; tempY <= 1; tempY++) {
+				neighbors.add(safeArrayListAccess(x + tempX, y + tempY));
+			}
+		}
+		return neighbors.stream()
+		                .filter(Objects::nonNull)
+		                .toList();
 	}
 }
