@@ -17,7 +17,7 @@
     "solved": "Solved! Time: %s",
     "tutorial": "Start by left-clicking a location"
   },
-  "numberOfMines": 10,
+  "numberOfMines": 40,
   "updateNearbyMines": true,
   "windowSize": {
     "x": 500,

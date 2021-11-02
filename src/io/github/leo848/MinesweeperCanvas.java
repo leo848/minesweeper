@@ -131,7 +131,7 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		int minutes = (int) (raw / 60_000);
 		int seconds = (int) raw / 1000;
 		
-		return "%d:%d.%d".formatted(minutes % 60, seconds % 60, millis % 1000);
+		return "%d:%d.%.2d".formatted(minutes % 60, seconds % 60, millis % 1000);
 	}
 	
 	private void drawGrid(Graphics2D g2D) {
