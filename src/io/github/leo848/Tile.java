@@ -51,6 +51,39 @@ public class Tile {
 		return !tile.isVisible();
 	}
 	
+	public boolean allMinesDefused() {
+		return getNonDefusedMines() == getNearbyMines();
+	}
+	
+	public void recursivelyUncoverNeighboringTiles() {
+		getNeighbors().stream()
+		              .filter(Tile::notVisible)
+		              .filter(Tile::notAMine)
+		              .filter(tile -> tile.getNeighbors()
+		                                  .stream()
+		                                  .anyMatch(Tile::allMinesDefused))
+		              .peek(Tile::makeVisible)
+		              .forEach(Tile::recursivelyUncoverNeighboringTiles);
+	}
+	
+	@Override
+	public int hashCode() {
+		int result = x;
+		result = 31 * result + y;
+		result = 31 * result + (isVisible() ? 1 : 0);
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (!(o instanceof final Tile tile)) return false;
+		
+		if (x != tile.x) return false;
+		if (y != tile.y) return false;
+		return isVisible() == tile.isVisible();
+	}
+	
 	public void show(Graphics2D g2D) {
 		if (!isVisible()) {
 			showScaledRect(g2D, x, y, new Color(0xdadbdc));
@@ -77,38 +110,6 @@ public class Tile {
 		}
 	}
 	
-	public boolean allMinesDefused() {
-		return getNonDefusedMines() == getNearbyMines();
-	}
-	
-	@Override
-	public int hashCode() {
-		int result = x;
-		result = 31 * result + y;
-		result = 31 * result + (isVisible() ? 1 : 0);
-		return result;
-	}
-	
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (!(o instanceof final Tile tile)) return false;
-		
-		if (x != tile.x) return false;
-		if (y != tile.y) return false;
-		return isVisible() == tile.isVisible();
-	}
-	
-	public int getNearbyMines() {
-		if (nearbyMines == null) {
-			nearbyMines = getNeighbors().stream()
-			                            .filter(Tile::isMine)
-			                            .toArray().length;
-		}
-		
-		return nearbyMines;
-	}
-	
 	public boolean isMine() {
 		return isMine;
 	}
@@ -121,15 +122,14 @@ public class Tile {
 		setVisible(true);
 	}
 	
-	public void recursivelyUncoverNeighboringTiles() {
-		getNeighbors().stream()
-		              .filter(Tile::notVisible)
-		              .filter(Tile::notAMine)
-		              .filter(tile -> tile.getNeighbors()
-		                                  .stream()
-		                                  .anyMatch(neighbor -> neighbor.nearbyMines == 0))
-		              .peek(Tile::makeVisible)
-		              .forEach(Tile::recursivelyUncoverNeighboringTiles);
+	public int getNearbyMines() {
+		if (nearbyMines == null) {
+			nearbyMines = getNeighbors().stream()
+			                            .filter(Tile::isMine)
+			                            .toArray().length;
+		}
+		
+		return nearbyMines;
 	}
 	
 	private void drawTextHere(Graphics2D g2D, String text) {
@@ -177,6 +177,15 @@ public class Tile {
 		                .toList();
 	}
 	
+	private Tile safeArrayListAccess(int x, int y) {
+		try {
+			return grid.get(x)
+			           .get(y);
+		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+	
 	private long getNonDefusedMines() {
 		return getNeighbors().stream()
 		                     .filter(Tile::isMine)
@@ -198,14 +207,5 @@ public class Tile {
 		       ", isVisible=" +
 		       isVisible() +
 		       '}';
-	}
-	
-	private Tile safeArrayListAccess(int x, int y) {
-		try {
-			return grid.get(x)
-			           .get(y);
-		} catch (IndexOutOfBoundsException e) {
-			return null;
-		}
 	}
 }
