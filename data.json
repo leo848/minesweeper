@@ -14,7 +14,7 @@
   "messages": {
     "afterTutorial": "",
     "gameOver": "Game Over!",
-    "solved": "Solved! Time: %s",
+    "solved": "Solved! Time: %s (%s per mine)",
     "tutorial": "Start by left-clicking a location"
   },
   "numberOfMines": 40,

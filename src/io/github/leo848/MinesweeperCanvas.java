@@ -20,11 +20,10 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 	private final transient GameLoop gameLoop;
 	Display display = new Display(MSG_TUTORIAL);
 	List<List<Tile>> grid;
-	private Graphics2D g2D;
-	private boolean gameOver;
-	
 	long startTime = System.nanoTime() / 1_000_000;
 	long endTime;
+	private Graphics2D g2D;
+	private boolean gameOver;
 	private boolean finished;
 	
 	public MinesweeperCanvas(GameLoop gameLoop) {
@@ -67,7 +66,8 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 	
 	@Override
 	public void mousePressed(MouseEvent e) {
-		if (Objects.equals(display.getText(), MSG_TUTORIAL)) display.setText(MSG_AFTER_TUTORIAL);
+		if (Objects.equals(display.getText(), MSG_TUTORIAL))
+			display.setText(MSG_AFTER_TUTORIAL, Display.Animation.FADE);
 		
 		Tile tile = determineMouseTile();
 		if (tile.isVisible()) return;
@@ -81,8 +81,10 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 				}
 			}
 			case 3 -> {
-				if (tile.isMine()) tile.makeVisible();
-				else gameOver(false);
+				if (tile.isMine()) {
+					tile.makeVisible();
+					display.setText(NUMBER_OF_MINES - Tile.visibleMines(grid), Display.Animation.TYPING);
+				} else gameOver(false);
 			}
 			default -> {
 			}
@@ -97,32 +99,19 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		endTime = System.nanoTime() / 1_000_000;
 		
 		if (result) {
+			String time = formattedSubtractedTime(startTime, endTime);
+			display.setText(String.format(MSG_SOLVED,
+			                              time,
+			                              "%.3f".formatted((double) (endTime - startTime) / 1000 / NUMBER_OF_MINES)),
+			                Display.Animation.TYPING);
+			
 			finished = true;
-		}
+		} else display.setText(MSG_GAME_OVER, Display.Animation.TYPING);
 		
 		uncoverAllTiles();
 		
 		gameLoop.frame.repaint();
 		gameOver = true;
-	}
-	
-	@Override
-	public void paint(Graphics graphics) {
-		g2D = (Graphics2D) graphics;
-		initGraphics();
-		
-		mouse.set(new Vector(getPointerInfo().getLocation()).sub(new Vector(getLocationOnScreen())));
-		
-		drawGrid(g2D);
-		if (gameOver) {
-			if (finished) {
-				display.setText(String.format(MSG_SOLVED, formattedSubtractedTime(startTime, endTime)));
-			} else display.setText(MSG_GAME_OVER);
-		}
-		
-		display.show(g2D);
-		
-		determineMouseTile().showHighlighted(g2D);
 	}
 	
 	private String formattedSubtractedTime(long startTime, long endTime) {
@@ -131,13 +120,13 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		int minutes = (int) (raw / 60_000);
 		int seconds = (int) raw / 1000;
 		
-		return "%d:%d.%.2d".formatted(minutes % 60, seconds % 60, millis % 1000);
+		return "%d:%d.%d".formatted(minutes % 60, seconds % 60, millis % 1000);
 	}
 	
-	private void drawGrid(Graphics2D g2D) {
+	private void uncoverAllTiles() {
 		grid.stream()
 		    .flatMap(Collection::stream)
-		    .forEachOrdered(tile -> tile.show(g2D));
+		    .forEach(Tile::makeVisible);
 	}
 	
 	/**
@@ -156,15 +145,29 @@ public class MinesweeperCanvas extends JPanel implements OptionalMouseListener {
 		           .get(y);
 	}
 	
+	@Override
+	public void paint(Graphics graphics) {
+		g2D = (Graphics2D) graphics;
+		initGraphics();
+		
+		mouse.set(new Vector(getPointerInfo().getLocation()).sub(new Vector(getLocationOnScreen())));
+		
+		drawGrid(g2D);
+		
+		display.show(g2D);
+		
+		determineMouseTile().showHighlighted(g2D);
+	}
+	
+	private void drawGrid(Graphics2D g2D) {
+		grid.stream()
+		    .flatMap(Collection::stream)
+		    .forEachOrdered(tile -> tile.show(g2D));
+	}
+	
 	private void initGraphics() {
 		g2D.setFont(DEFAULT_FONT);
 		g2D.setColor(new Color(0xcccccc));
 		g2D.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-	}
-	
-	private void uncoverAllTiles() {
-		grid.stream()
-		    .flatMap(Collection::stream)
-		    .forEach(Tile::makeVisible);
 	}
 }

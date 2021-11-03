@@ -28,6 +28,14 @@ public class Tile {
 		           .allMatch(Tile::isVisible);
 	}
 	
+	public static int visibleMines(List<List<Tile>> grid) {
+		return (int) grid.stream()
+		                 .flatMap(Collection::stream)
+		                 .filter(Tile::isMine)
+		                 .filter(Tile::isVisible)
+		                 .count();
+	}
+	
 	public boolean isVisible() {
 		return isVisible;
 	}
